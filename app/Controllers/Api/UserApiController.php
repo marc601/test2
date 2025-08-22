@@ -2,6 +2,7 @@
 
 namespace App\Controllers\Api;
 
+use App\Core\JsonResponse;
 use App\Core\Database;
 use App\Models\User;
 use App\Controllers\Api\AbstractApiController;
@@ -12,7 +13,6 @@ class UserApiController extends AbstractApiController
     public function index(?User $user = null)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
 
         $userModel = $user ?? new User(Database::getInstance());
         $users = $userModel->find();
@@ -26,34 +26,30 @@ class UserApiController extends AbstractApiController
             ];
         }
 
-        echo json_encode($usersData);
+        JsonResponse::ok($usersData);
     }
 
     public function show($id, ?User $user = null)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $userModel = $user ?? new User(Database::getInstance());
         $user = $userModel->find($id);
 
         if ($user) {
-            unset($user->password);
-            echo json_encode($user);
+            $userData = $user[0]->toArray();
+            unset($userData['password']);
+            JsonResponse::ok($userData);
         } else {
-            http_response_code(404);
-            echo json_encode(['message' => 'User not found']);
+            JsonResponse::notFound('User not found');
         }
     }
 
     public function store(?User $user = null)
     {
-        header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !$data) {
-            http_response_code(400); // Bad Request
-            echo json_encode(['message' => 'Invalid JSON or empty request body']);
-            return;
+            return JsonResponse::send(400, ['message' => 'Invalid JSON or empty request body']);
         }
 
         $now = new DateTime();
@@ -66,45 +62,35 @@ class UserApiController extends AbstractApiController
         $user->updated_at = $now->format('Y-m-d H:i:s');
         $errors = $user->validate();
         if (!empty($errors)) {
-            http_response_code(422);
-            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
-            return;
+            return JsonResponse::unprocessable($errors);
         }
 
         if ($user->saveRecord()) {
-            http_response_code(201);
-            $user->password = 'Secret';
-            echo json_encode($user->toArray());
+            $userData = $user->toArray();
+            unset($userData['password']);
+            JsonResponse::created($userData);
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to create user']);
+            JsonResponse::serverError('Failed to create user');
         }
     }
 
     public function update($id)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
 
         if ($user_id != $id) {
-            http_response_code(403); // Forbidden
-            echo json_encode(['message' => 'Forbidden: You can only update your own profile.']);
-            return;
+            return JsonResponse::send(403, ['message' => 'Forbidden: You can only update your own profile.']);
         }
 
         $data = json_decode(file_get_contents('php://input'), true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Invalid JSON.']);
-            return;
+        if (json_last_error() !== JSON_ERROR_NONE || !$data) {
+            return JsonResponse::send(400, ['message' => 'Invalid JSON or empty request body']);
         }
 
         $userModel = new User(Database::getInstance());
         $user = $userModel->find($id);
         if (!$user) {
-            http_response_code(404);
-            echo json_encode(['message' => 'User not found']);
-            return;
+            return JsonResponse::notFound('User not found');
         }
         $user = $user[0];
 
@@ -117,47 +103,38 @@ class UserApiController extends AbstractApiController
 
         $errors = $user->validate(true);
         if (!empty($errors)) {
-            http_response_code(422);
-            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
-            return;
+            return JsonResponse::unprocessable($errors);
         }
 
 
         if ($user->saveRecord()) {
-            $user->password = 'Secret';
-            echo json_encode($user->toArray());
+            $userData = $user->toArray();
+            unset($userData['password']);
+            JsonResponse::ok($userData);
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to update user']);
+            JsonResponse::serverError('Failed to update user');
         }
     }
 
     public function delete($id)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
 
-        // --- MEJORA DE AUTORIZACIÓN ---
         if ($user_id != $id) {
-            http_response_code(403); // Forbidden
-            echo json_encode(['message' => 'Forbidden: You can only delete your own profile.']);
-            return;
+            return JsonResponse::send(403, ['message' => 'Forbidden: You can only delete your own profile.']);
         }
 
         $userModel = new User(Database::getInstance());
         $user = $userModel->find($id);
 
         if (!$user) {
-            http_response_code(404);
-            echo json_encode(['message' => 'User not found']);
-            return;
+            return JsonResponse::notFound('User not found');
         }
 
         if ($userModel->deleteRecord($id)) {
-            echo json_encode(['message' => 'User deleted']);
+            JsonResponse::ok(['message' => 'User deleted']);
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to delete user']);
+            JsonResponse::serverError('Failed to delete user');
         }
     }
 }

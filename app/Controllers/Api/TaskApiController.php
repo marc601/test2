@@ -3,10 +3,12 @@
 namespace App\Controllers\Api;
 
 use App\Controllers\Api\AbstractApiController;
+use App\Core\JsonResponse;
 use App\Core\Database;
 use App\Models\Task;
+use App\Models\Session;
 use DateTime;
-// Import Session model
+
 
 class TaskApiController extends AbstractApiController
 {
@@ -15,39 +17,31 @@ class TaskApiController extends AbstractApiController
     public function index()
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $taskModel = new Task(Database::getInstance());
 
-        // muestra solo lo creado por el usario
         $tasks = $taskModel->findbyField('user_id', $user_id);
-        echo json_encode($tasks);
+        JsonResponse::ok($tasks);
     }
 
     public function show($id)
     {
-        $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
+        $user_id = $this->authenticate();
 
         if (empty($task) || $task[0]->user_id !== $user_id) { // Check ownership
-            http_response_code(404);
-            echo json_encode(['message' => 'Task not found or unauthorized']);
-            return;
+            return JsonResponse::notFound('Task not found or unauthorized');
         }
-        echo json_encode($task[0]);
+        JsonResponse::ok($task[0]->toArray());
     }
 
     public function store()
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (json_last_error() !== JSON_ERROR_NONE || !$data) {
-            http_response_code(400); // Bad Request
-            echo json_encode(['message' => 'Invalid JSON or empty request body']);
-            return;
+            return JsonResponse::send(400, ['message' => 'Invalid JSON or empty request body']);
         }
 
         $errors = [];
@@ -64,32 +58,25 @@ class TaskApiController extends AbstractApiController
         $task->updated_at = $now->format('Y-m-d H:i:s');
         $errors = $task->validate();
         if (!empty($errors)) {
-            http_response_code(422);
-            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
-            return;
+            return JsonResponse::unprocessable($errors);
         }
         if ($task->saveRecord()) {
-            http_response_code(201);
-            echo json_encode($task->toArray());
+            JsonResponse::created($task->toArray());
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to create task']);
+            JsonResponse::serverError('Failed to create task');
         }
     }
 
     public function update($id)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
 
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
         if (empty($task) || $task[0]->user_id !== $user_id) {
-            http_response_code(404);
-            echo json_encode(['message' => 'Task not found or unauthorized']);
-            return;
+            return JsonResponse::notFound('Task not found or unauthorized');
         }
         $task = $task[0];
 
@@ -98,32 +85,32 @@ class TaskApiController extends AbstractApiController
         $task->status = $data['status'] ?? $task->status;
         $task->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
+        $errors = $task->validate();
+        if (!empty($errors)) {
+            return JsonResponse::unprocessable($errors);
+        }
+
         if ($task->saveRecord()) {
-            echo json_encode($task->toArray());
+            JsonResponse::ok($task->toArray());
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to update task']);
+            JsonResponse::serverError('Failed to update task');
         }
     }
 
     public function delete($id)
     {
         $user_id = $this->authenticate();
-        header('Content-Type: application/json');
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
         if (empty($task) || $task[0]->user_id !== $user_id) {
-            http_response_code(404);
-            echo json_encode(['message' => 'Task not found or unauthorized']);
-            return;
+            return JsonResponse::notFound('Task not found or unauthorized');
         }
 
         if ($taskModel->delete($taskModel->getmetadata(), $id)) {
-            echo json_encode(['message' => 'Task deleted']);
+            JsonResponse::ok(['message' => 'Task deleted']);
         } else {
-            http_response_code(500);
-            echo json_encode(['message' => 'Failed to delete task']);
+            JsonResponse::serverError('Failed to delete task');
         }
     }
 }
