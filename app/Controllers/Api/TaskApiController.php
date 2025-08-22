@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controllers\Api;
+
 use App\Controllers\Api\AbstractApiController;
 use App\Core\Database;
 use App\Models\Task;
@@ -39,35 +40,45 @@ class TaskApiController extends AbstractApiController
 
     public function store()
     {
-        $now = new DateTime();
-
         $user_id = $this->authenticate();
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
-        $task = new Task(Database::getInstance());
 
-        if (empty($data)) {
-            http_response_code(500);
-            echo json_encode(['message' => 'data not fount']);
-            exit;
+        if (json_last_error() !== JSON_ERROR_NONE || !$data) {
+            http_response_code(400); // Bad Request
+            echo json_encode(['message' => 'Invalid JSON or empty request body']);
+            return;
         }
+
+        $errors = [];
+        if (empty($data['title']) || !is_string($data['title'])) {
+            $errors['title'] = 'The title field is required and must be a string.';
+        }
+        if (!isset($data['status']) || !is_int($data['status'])) {
+            $errors['status'] = 'The status field is required and must be an integer.';
+        }
+
+        if (!empty($errors)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
+            return;
+        }
+
+        $now = new DateTime();
+        $task = new Task(Database::getInstance());
         $task->user_id = $user_id;
-        $task->title = $data['title'];
-        $task->description = $data['description'];
+        $task->title = trim($data['title']);
+        $task->description = isset($data['description']) ? trim($data['description']) : null;
         $task->status = $data['status'];
         $task->created_at = $now->format('Y-m-d H:i:s');
         $task->updated_at = $now->format('Y-m-d H:i:s');
 
-
-
         if ($task->saveRecord()) {
             http_response_code(201);
-            echo json_encode($task);
-            exit;
+            echo json_encode($task->toArray());
         } else {
             http_response_code(500);
             echo json_encode(['message' => 'Failed to create task']);
-            exit;
         }
     }
 

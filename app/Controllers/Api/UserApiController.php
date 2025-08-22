@@ -47,23 +47,49 @@ class UserApiController extends AbstractApiController
 
     public function store(?User $user = null)
     {
-        $now = new DateTime();
-
-        $user_id = $this->authenticate();
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $user = $user ?? new User(Database::getInstance());
-        $user->name = $data['name'];
-        $user->email = $data['email'];
-        $user->password = $data['password'];
+        if (json_last_error() !== JSON_ERROR_NONE || !$data) {
+            http_response_code(400); // Bad Request
+            echo json_encode(['message' => 'Invalid JSON or empty request body']);
+            return;
+        }
+
+        $requiredFields = ['name', 'email', 'password'];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field]) || empty(trim($data[$field]))) {
+                http_response_code(400);
+                echo json_encode(['message' => "Bad Request: Missing or empty field '{$field}'"]);
+                return;
+            }
+        }
+
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Bad Request: Invalid email format']);
+            return;
+        }
+
+        $userModel = new User(Database::getInstance());
+        if ($userModel->findbyField('email', $data['email'])) {
+            http_response_code(409); // Conflict
+            echo json_encode(['message' => 'Conflict: User with this email already exists']);
+            return;
+        }
+
+        $now = new DateTime();
+        $user = $user ?? $userModel;
+        $user->name = trim($data['name']);
+        $user->email = trim($data['email']);
+        $user->password = password_hash($data['password'], PASSWORD_BCRYPT);
         $user->created_at = $now->format('Y-m-d H:i:s');
         $user->updated_at = $now->format('Y-m-d H:i:s');
 
         if ($user->saveRecord()) {
             http_response_code(201);
-            $user->password = 'Secret';
-            echo json_encode($user);
+            unset($user->password);
+            echo json_encode($user->toArray());
         } else {
             http_response_code(500);
             echo json_encode(['message' => 'Failed to create user']);
