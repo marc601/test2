@@ -29,6 +29,10 @@
                 <td><?php echo htmlspecialchars($data['statuses'][$data['task']->status]); ?></td>
             </tr>
             <tr>
+                <th>Fecha de Vencimiento</th>
+                <td><?php echo htmlspecialchars($data['task']->due_date ?? 'N/A'); ?></td>
+            </tr>
+            <tr>
                 <th>Id Usuario</th>
                 <td><?php echo htmlspecialchars($data['task']->user_id); ?></td>
             </tr>

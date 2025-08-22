@@ -1,4 +1,5 @@
 <?php
+
 use App\Models\Task;
 ?>
 <!DOCTYPE html>
@@ -48,6 +49,7 @@ use App\Models\Task;
                     <th>ID</th>
                     <th>Titulo</th>
                     <th>Estatus</th>
+                    <th>Fecha de Vencimiento</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -57,6 +59,7 @@ use App\Models\Task;
                         <td><?php echo htmlspecialchars($task->id); ?></td>
                         <td><?php echo htmlspecialchars($task->title); ?></td>
                         <td><?php echo htmlspecialchars($data['statuses'][$task->status]); ?></td>
+                        <td><?php echo htmlspecialchars($task->due_date ?? 'N/A'); ?></td>
                         <td>
                             <a href="/task/show/<?php echo $task->id; ?>" class="btn btn-info btn-sm">Detalle</a>
                             <a href="/task/edit/<?php echo $task->id; ?>" class="btn btn-warning btn-sm">Editar</a>

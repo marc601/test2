@@ -26,9 +26,13 @@
                 <label for="status" class="form-label">Estatus</label>
                 <select class="form-control" id="status" name="status">
                     <?php foreach ($data['statuses'] as $key => $status): ?>
-                        <option value="<?php echo $key; ?>"><?php echo $status; ?></option>
+                        <option value="<?php echo $key; ?>" <?php echo ($key == $data['task']->status) ? 'selected' : ''; ?>><?php echo $status; ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="mb-3">
+                <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                <input type="date" class="form-control" id="due_date" name="due_date" value="<?php echo htmlspecialchars($data['task']->due_date ?? ''); ?>">
             </div>
             <button type="submit" class="btn btn-primary">Actualizar</button>
         </form>

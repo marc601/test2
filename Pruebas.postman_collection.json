@@ -77,7 +77,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "{{token}}}",
+								"value": "{{token}}",
 								"type": "text"
 							},
 							{
@@ -88,7 +88,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"New Task Title\",\n    \"description\": \"Description of the new task.\",\n    \"status\": 1\n}",
+							"raw": "{\n    \"title\": \"New Task Title\",\n    \"description\": \"Description of the new task.\",\n    \"status\": 1,\n    \"due_date\":\"2025-08-22\"\n   \n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -115,7 +115,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "{{token}}}",
+								"value": "{{token}}",
 								"type": "text"
 							},
 							{
@@ -134,14 +134,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseURL}}/api/task/9",
+							"raw": "{{baseURL}}/api/task/12",
 							"host": [
 								"{{baseURL}}"
 							],
 							"path": [
 								"api",
 								"task",
-								"9"
+								"12"
 							]
 						}
 					},
@@ -258,7 +258,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Cosme Fulanito3\",\n    \"email\": \"cosme.fulanito4@example.com\",\n    \"password\": \"securepassword123\"\n}",
+							"raw": "{\n    \"name\": \"Cosme Fulanito3\",\n    \"email\": \"cosme.fulanito9@example.com\",\n    \"password\": \"securepassword123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -285,7 +285,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "{{token}}}",
+								"value": "{{token}}",
 								"type": "text"
 							},
 							{
@@ -304,14 +304,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseURL}}/api/user/5",
+							"raw": "{{baseURL}}/api/user/1",
 							"host": [
 								"{{baseURL}}"
 							],
 							"path": [
 								"api",
 								"user",
-								"5"
+								"1"
 							]
 						}
 					},
@@ -388,7 +388,7 @@
 		},
 		{
 			"key": "token",
-			"value": "Bearer 58d215a581773c02719ec45d"
+			"value": "Bearer b9e3dbec7ead75745f2fc948"
 		}
 	]
 }

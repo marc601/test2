@@ -48,6 +48,7 @@ class TaskController extends AbstractController
         $task->status = (int)($_POST['status'] ?? 0);
         $task->created_at = $now->format('Y-m-d H:i:s');
         $task->updated_at = $now->format('Y-m-d H:i:s');
+        $task->due_date = trim($_POST['due_date'] ?? null);
 
         $errors = $task->validate();
 
@@ -100,6 +101,7 @@ class TaskController extends AbstractController
         $task->title = trim($_POST['title'] ?? '');
         $task->description = trim($_POST['description'] ?? '');
         $task->status = (int)($_POST['status'] ?? 0);
+        $task->due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
         $task->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
         $errors = $task->validate();

@@ -12,6 +12,7 @@ class Task extends AbstractModel
     public $description;
     public $status;
     public $created_at;
+    public $due_date;
     public $updated_at;
 
     public function __construct(?Database $connection)
@@ -31,6 +32,7 @@ class Task extends AbstractModel
                 'description',
                 'status',
                 'created_at',
+                'due_date',
                 'updated_at'
             ]
         ];
@@ -76,6 +78,7 @@ class Task extends AbstractModel
         $task->description = $data['description'];
         $task->status = $data['status'];
         $task->created_at = $data['created_at'];
+        $task->due_date = $data['due_date'] ?? null;
         $task->updated_at = $data['updated_at'];
         return $task;
     }
@@ -89,6 +92,7 @@ class Task extends AbstractModel
             'description' => $this->description,
             'status' => $this->status,
             'created_at' => $this->created_at,
+            'due_date' => $this->due_date,
             'updated_at' => $this->updated_at
         ];
     }
@@ -118,10 +122,13 @@ class Task extends AbstractModel
     {
         $errors = [];
         if (!$this->title || !is_string($this->title)) {
-            $errors['title'] = 'The title field is required and must be a string.';
+            $errors[] = 'The title field is required and must be a string.';
+        }
+        if (!$this->due_date || !is_string($this->due_date)) {
+            $errors[] = 'The due_date field is required and must be a string.';
         }
         if (!$this->status || !is_int($this->status)) {
-            $errors['status'] = 'The status field is required and must be an integer.';
+            $errors[] = 'The status field is required and must be an integer.';
         }
         return $errors;
     }

@@ -56,6 +56,7 @@ class TaskApiController extends AbstractApiController
         $task->status = $data['status'] ?? null;
         $task->created_at = $now->format('Y-m-d H:i:s');
         $task->updated_at = $now->format('Y-m-d H:i:s');
+        $task->due_date = $data['due_date'] ?? null;
         $errors = $task->validate();
         if (!empty($errors)) {
             return JsonResponse::unprocessable($errors);

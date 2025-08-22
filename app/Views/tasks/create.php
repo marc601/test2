@@ -28,6 +28,10 @@
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="due_date" class="form-label">Fecha de Vencimiento</label>
+                <input type="date" class="form-control" id="due_date" name="due_date">
+            </div>
             <button type="submit" class="btn btn-primary">Nuevo</button>
         </form>
     </div>
