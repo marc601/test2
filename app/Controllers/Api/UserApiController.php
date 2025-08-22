@@ -66,8 +66,8 @@ class UserApiController extends AbstractApiController
         $user->updated_at = $now->format('Y-m-d H:i:s');
         $errors = $user->validate();
         if (!empty($errors)) {
-            http_response_code(400);
-            echo json_encode($errors);
+            http_response_code(422);
+            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
             return;
         }
 
@@ -86,8 +86,6 @@ class UserApiController extends AbstractApiController
         $user_id = $this->authenticate();
         header('Content-Type: application/json');
 
-        // --- MEJORA DE AUTORIZACIÓN ---
-        // Un usuario solo puede modificarse a sí mismo.
         if ($user_id != $id) {
             http_response_code(403); // Forbidden
             echo json_encode(['message' => 'Forbidden: You can only update your own profile.']);
@@ -117,8 +115,16 @@ class UserApiController extends AbstractApiController
         }
         $user->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
+        $errors = $user->validate(true);
+        if (!empty($errors)) {
+            http_response_code(422);
+            echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
+            return;
+        }
+
+
         if ($user->saveRecord()) {
-            unset($user->password);
+            $user->password = 'Secret';
             echo json_encode($user->toArray());
         } else {
             http_response_code(500);

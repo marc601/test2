@@ -64,7 +64,7 @@ class TaskApiController extends AbstractApiController
         $task->updated_at = $now->format('Y-m-d H:i:s');
         $errors = $task->validate();
         if (!empty($errors)) {
-            http_response_code(400);
+            http_response_code(422);
             echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
             return;
         }
@@ -86,7 +86,7 @@ class TaskApiController extends AbstractApiController
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) { 
+        if (empty($task) || $task[0]->user_id !== $user_id) {
             http_response_code(404);
             echo json_encode(['message' => 'Task not found or unauthorized']);
             return;
@@ -113,7 +113,7 @@ class TaskApiController extends AbstractApiController
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) { 
+        if (empty($task) || $task[0]->user_id !== $user_id) {
             http_response_code(404);
             echo json_encode(['message' => 'Task not found or unauthorized']);
             return;

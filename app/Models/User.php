@@ -87,7 +87,7 @@ class User extends AbstractModel
         return $this->delete($this->getmetadata(), $id);
     }
 
-    public function validate()
+    public function validate($isUpdate = false)
     {
 
         $requiredFields = ['name', 'email', 'password'];
@@ -97,15 +97,18 @@ class User extends AbstractModel
                 $errors[] = "Bad Request: Missing or empty field '{$field}'";
             }
         }
-        
+
         if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Bad Request: Invalid email format';
         }
 
-
-        if ($this->findbyField('email', $this->email)) {
-            $errors[] = 'Conflict: User with this email already exists';
+        $existingUser = $this->findbyField('email', $this->email);
+        if ($existingUser) {
+            if (!$isUpdate || ($isUpdate && $existingUser[0]->id != $this->id)) {
+                $errors[] = 'Conflict: User with this email already exists';
+            }
         }
+
         return $errors;
     }
 }
