@@ -48,6 +48,21 @@ abstract class AbstractModel
         return $result;
     }
 
+    public function selectById($metadata, $model, $id)
+    {
+        $conn = $this->db->getConnection();
+        $stmt = $conn->prepare("SELECT * FROM {$metadata['tableName']} WHERE {$metadata['primaryKey']} = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($data) {
+            return $model::fromArray($data);
+        }
+
+        return null;
+    }
+
+
     /**
      * Find a user by email.
      *

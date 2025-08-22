@@ -4,124 +4,160 @@ namespace App\Controllers;
 
 use App\Core\Database;
 use App\Models\Task;
-use App\Models\User;
-use App\Controllers\AbstractController;
+use DateTime;
 
 class TaskController extends AbstractController
 {
     public function index()
     {
-        $this->authenticate();
+        $user_id = $this->authenticate();
         $taskModel = new Task(Database::getInstance());
-        $tasks = $taskModel->findbyField('user_id', $_SESSION['user_id']);
+
+        // Use the model to find tasks for the logged-in user
+        $tasks = $taskModel->findbyField('user_id', $user_id);
+
         $data = [
-            'title' => 'Tareas',
+            'title' => 'Mis Tareas',
             'tasks' => $tasks,
-            'statuses' => Task::$statuses
+            'statuses' => $taskModel::$statuses
         ];
-        require_once __DIR__ . '/../Views/tasks/index.php';
-    }
-
-    public function show($id)
-    {
-        $this->authenticate();
-        $taskModel = new Task(Database::getInstance());
-
-        $task = $taskModel->find($id);
-
-        $data = [
-            'title' => 'Detalle de la Tarea',
-            'task' => $task[0],
-            'statuses' => Task::$statuses
-        ];
-        require_once __DIR__ . '/../Views/tasks/show.php';
+        $this->render('tasks/index', $data);
     }
 
     public function create()
     {
         $this->authenticate();
-        $userModel = new User(Database::getInstance());
-        $users = $userModel->find();
         $data = [
-            'title' => 'Nueva Tarea',
-            'users' => $users,
-            'statuses' => Task::$statuses
+            'title' => 'Crear Tarea',
+            'task' => new Task(null),
+            'statuses' => Task::$statuses,
+            'errors' => []
         ];
-        require_once __DIR__ . '/../Views/tasks/create.php';
+        $this->render('tasks/create', $data);
     }
 
     public function store()
     {
-        $this->authenticate();
+        $user_id = $this->authenticate();
+        $now = new DateTime();
+
         $task = new Task(Database::getInstance());
-        $task->user_id = $_SESSION['user_id'];
-        $task->title = $_POST['title'];
-        $task->description = $_POST['description'];
-        $task->status = $_POST['status'];
-        $task->saveRecord();
-        header('Location: /task');
+        $task->user_id = $user_id;
+        $task->title = trim($_POST['title'] ?? '');
+        $task->description = trim($_POST['description'] ?? '');
+        $task->status = (int)($_POST['status'] ?? 0);
+        $task->created_at = $now->format('Y-m-d H:i:s');
+        $task->updated_at = $now->format('Y-m-d H:i:s');
+
+        $errors = $task->validate();
+
+        if (empty($errors)) {
+            $task->saveRecord();
+            $this->redirect('/task');
+        }
+
+        // If validation fails, re-render the form with errors and old data
+        $data = [
+            'title' => 'Crear Tarea',
+            'task' => $task,
+            'errors' => $errors
+        ];
+        $this->render('tasks/create', $data);
     }
 
     public function edit($id)
     {
-        $this->authenticate();
+        $user_id = $this->authenticate();
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id);
-        $userModel = new User(Database::getInstance());
-        $users = $userModel->find();
+        $task = $taskModel->findById($id);
+
+        // Authorization: Check if the task exists and belongs to the user
+        if (!$task || $task->user_id != $user_id) {
+            $this->redirect('/task');
+        }
+
         $data = [
             'title' => 'Editar Tarea',
-            'task' => $task[0],
-            'users' => $users,
-            'statuses' => Task::$statuses
+            'task' => $task,
+            'statuses' => Task::$statuses,
+            'errors' => []
         ];
-        require_once __DIR__ . '/../Views/tasks/edit.php';
+        $this->render('tasks/edit', $data);
     }
 
     public function update($id)
     {
-        $this->authenticate();
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("UPDATE tasks SET user_id = :user_id, title = :title, description = :description, status = :status WHERE id = :id");
-        $stmt->execute([
-            'user_id' => $_SESSION['user_id'],
-            'title' => $_POST['title'],
-            'description' => $_POST['description'],
-            'status' => $_POST['status'],
-            'id' => $id
-        ]);
+        $user_id = $this->authenticate();
+        $taskModel = new Task(Database::getInstance());
+        $task = $taskModel->findById($id);
 
-        header('Location: /task');
+        // Authorization: Check if the task exists and belongs to the user
+        if (!$task || $task->user_id != $user_id) {
+            $this->redirect('/task');
+        }
+
+        // Map and validate data
+        $task->title = trim($_POST['title'] ?? '');
+        $task->description = trim($_POST['description'] ?? '');
+        $task->status = (int)($_POST['status'] ?? 0);
+        $task->updated_at = (new DateTime())->format('Y-m-d H:i:s');
+
+        $errors = $task->validate();
+
+        if (empty($errors)) {
+            $task->saveRecord();
+            $this->redirect('/task');
+        }
+
+        // If validation fails, re-render the edit form
+        $data = [
+            'title' => 'Editar Tarea',
+            'task' => $task,
+            'errors' => $errors
+        ];
+        $this->render('tasks/edit', $data);
     }
 
     public function delete($id)
     {
-        $this->authenticate();
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("DELETE FROM tasks WHERE id = :id");
-        $stmt->execute(['id' => $id]);
-
-        header('Location: /task');
-    }
-
-    public function start($id)
-    {
-        $this->authenticate();
+        $user_id = $this->authenticate();
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->findById($id);
-        $task->markInProgress();
 
-        header('Location: /task');
-        exit;
+        // Authorization: Check if the task exists and belongs to the user
+        if (!$task || $task->user_id != $user_id) {
+            $this->redirect('/task');
+        }
+
+        $taskModel->delete($taskModel->getmetadata(), $id);
+
+        $this->redirect('/task');
+    }
+    public function start($id)
+    {
+        $user_id = $this->authenticate();
+        $taskModel = new Task(Database::getInstance());
+        $task = $taskModel->findById($id);
+
+        if (!$task || $task->user_id != $user_id) {
+            $this->redirect('/task');
+        }
+
+        $task->markInProgress();
+        $this->redirect('/task');
     }
 
     public function finish($id)
     {
-        $this->authenticate();
+        $user_id = $this->authenticate();
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->findById($id);
+
+        if (!$task || $task->user_id != $user_id) {
+            $this->redirect('/task');
+        }
+
         $task->markDone();
-        header('Location: /task');
-        exit;
+        $this->redirect('/task');
     }
 }
