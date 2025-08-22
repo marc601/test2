@@ -68,4 +68,6 @@ class Session extends AbstractModel
     {
         return $this->save($this->getmetadata(), $this);
     }
+
+    public function validate() {}
 }

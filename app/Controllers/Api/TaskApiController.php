@@ -51,28 +51,23 @@ class TaskApiController extends AbstractApiController
         }
 
         $errors = [];
-        if (empty($data['title']) || !is_string($data['title'])) {
-            $errors['title'] = 'The title field is required and must be a string.';
-        }
-        if (!isset($data['status']) || !is_int($data['status'])) {
-            $errors['status'] = 'The status field is required and must be an integer.';
-        }
 
+
+
+        $now = new DateTime();
+        $task = new Task(Database::getInstance());
+        $task->user_id = $user_id;
+        $task->title = isset($data['title']) ? trim($data['title']) : null;
+        $task->description = isset($data['description']) ? trim($data['description']) : null;
+        $task->status = $data['status'] ?? null;
+        $task->created_at = $now->format('Y-m-d H:i:s');
+        $task->updated_at = $now->format('Y-m-d H:i:s');
+        $errors = $task->validate();
         if (!empty($errors)) {
             http_response_code(400);
             echo json_encode(['message' => 'Validation failed', 'errors' => $errors]);
             return;
         }
-
-        $now = new DateTime();
-        $task = new Task(Database::getInstance());
-        $task->user_id = $user_id;
-        $task->title = trim($data['title']);
-        $task->description = isset($data['description']) ? trim($data['description']) : null;
-        $task->status = $data['status'];
-        $task->created_at = $now->format('Y-m-d H:i:s');
-        $task->updated_at = $now->format('Y-m-d H:i:s');
-
         if ($task->saveRecord()) {
             http_response_code(201);
             echo json_encode($task->toArray());
@@ -91,21 +86,19 @@ class TaskApiController extends AbstractApiController
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) { // Check ownership
+        if (empty($task) || $task[0]->user_id !== $user_id) { 
             http_response_code(404);
             echo json_encode(['message' => 'Task not found or unauthorized']);
             return;
         }
-        $task = $task[0]; // find() returns an array
+        $task = $task[0];
 
         $task->title = $data['title'] ?? $task->title;
         $task->description = $data['description'] ?? $task->description;
         $task->status = $data['status'] ?? $task->status;
         $task->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
-        // The saveRecord method now handles updates automatically
         if ($task->saveRecord()) {
-            // It's good practice to return the updated object
             echo json_encode($task->toArray());
         } else {
             http_response_code(500);
@@ -120,7 +113,7 @@ class TaskApiController extends AbstractApiController
         $taskModel = new Task(Database::getInstance());
         $task = $taskModel->find($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) { // Check ownership
+        if (empty($task) || $task[0]->user_id !== $user_id) { 
             http_response_code(404);
             echo json_encode(['message' => 'Task not found or unauthorized']);
             return;

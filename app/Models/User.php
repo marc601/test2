@@ -86,4 +86,26 @@ class User extends AbstractModel
     {
         return $this->delete($this->getmetadata(), $id);
     }
+
+    public function validate()
+    {
+
+        $requiredFields = ['name', 'email', 'password'];
+        $errors = [];
+        foreach ($requiredFields as $field) {
+            if (!isset($this->{$field}) || empty(trim($this->{$field}))) {
+                $errors[] = "Bad Request: Missing or empty field '{$field}'";
+            }
+        }
+        
+        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Bad Request: Invalid email format';
+        }
+
+
+        if ($this->findbyField('email', $this->email)) {
+            $errors[] = 'Conflict: User with this email already exists';
+        }
+        return $errors;
+    }
 }

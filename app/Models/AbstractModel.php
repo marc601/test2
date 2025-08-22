@@ -16,7 +16,6 @@ abstract class AbstractModel
     public function __construct(?Database $db = null)
     {
         $this->db = $db;
-        // podriamos pasar la estatica de la clase Database
     }
 
     /**
@@ -92,14 +91,14 @@ abstract class AbstractModel
 
         // If the model has a primary key, it's an update
         if (isset($model->{$metadata['primaryKey']}) && !empty($model->{$metadata['primaryKey']})) {
-            $fields = implode(', ', array_map(fn ($c) => "$c = :$c", $columns));
+            $fields = implode(', ', array_map(fn($c) => "$c = :$c", $columns));
             $stmt = $conn->prepare(
                 "UPDATE {$metadata['tableName']} SET {$fields} WHERE {$metadata['primaryKey']} = :{$metadata['primaryKey']}"
             );
             $params[':' . $metadata['primaryKey']] = $arrayModel[$metadata['primaryKey']];
         } else { // Otherwise, it's an insert
             $fields = implode(', ', $columns);
-            $placeholders = implode(', ', array_map(fn ($c) => ":$c", $columns));
+            $placeholders = implode(', ', array_map(fn($c) => ":$c", $columns));
             $stmt = $conn->prepare(
                 "INSERT INTO {$metadata['tableName']} ({$fields}) VALUES ({$placeholders})"
             );
@@ -120,7 +119,7 @@ abstract class AbstractModel
 
     public function delete($metadata, $id)
     {
-        
+
         $stmt = $this->db->getConnection()->prepare(
             "DELETE FROM {$metadata['tableName']} WHERE {$metadata['primaryKey']} = :id"
         );
@@ -128,4 +127,7 @@ abstract class AbstractModel
 
         return $stmt->execute();
     }
+
+    //for validation fields
+    abstract function validate();
 }

@@ -56,35 +56,20 @@ class UserApiController extends AbstractApiController
             return;
         }
 
-        $requiredFields = ['name', 'email', 'password'];
-        foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || empty(trim($data[$field]))) {
-                http_response_code(400);
-                echo json_encode(['message' => "Bad Request: Missing or empty field '{$field}'"]);
-                return;
-            }
-        }
-
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            http_response_code(400);
-            echo json_encode(['message' => 'Bad Request: Invalid email format']);
-            return;
-        }
-
-        $userModel = new User(Database::getInstance());
-        if ($userModel->findbyField('email', $data['email'])) {
-            http_response_code(409); // Conflict
-            echo json_encode(['message' => 'Conflict: User with this email already exists']);
-            return;
-        }
-
         $now = new DateTime();
+        $userModel = new User(Database::getInstance());
         $user = $user ?? $userModel;
-        $user->name = trim($data['name']);
-        $user->email = trim($data['email']);
+        $user->name = isset($data['name']) ? trim($data['name']) : null;
+        $user->email = isset($data['email']) ? trim($data['email']) : null;
         $user->password = password_hash($data['password'], PASSWORD_BCRYPT);
         $user->created_at = $now->format('Y-m-d H:i:s');
         $user->updated_at = $now->format('Y-m-d H:i:s');
+        $errors = $user->validate();
+        if (!empty($errors)) {
+            http_response_code(400);
+            echo json_encode($errors);
+            return;
+        }
 
         if ($user->saveRecord()) {
             http_response_code(201);

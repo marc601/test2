@@ -107,4 +107,16 @@ class Task extends AbstractModel
     {
         return $this->save($this->getmetadata(), $this);
     }
+
+    public function validate()
+    {
+        $errors = [];
+        if (!$this->title || !is_string($this->title)) {
+            $errors['title'] = 'The title field is required and must be a string.';
+        }
+        if (!$this->status || !is_int($this->status)) {
+            $errors['status'] = 'The status field is required and must be an integer.';
+        }
+        return $errors;
+    }
 }
