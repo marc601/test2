@@ -67,7 +67,7 @@ class UserController extends AbstractController
     {
         $this->authenticate();
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id)[0];
+        $user = $userModel->findById($id);
         $user->name = $_POST['name'];
         $user->email = $_POST['email'];
 
@@ -92,7 +92,7 @@ class UserController extends AbstractController
     {
         $this->authenticate();
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id)[0];
+        $user = $userModel->findById($id);
 
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("DELETE FROM users WHERE id = :id");

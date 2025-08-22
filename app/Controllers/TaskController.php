@@ -108,8 +108,9 @@ class TaskController extends AbstractController
     {
         $this->authenticate();
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id)[0];
+        $task = $taskModel->findById($id);
         $task->markInProgress();
+
         header('Location: /task');
         exit;
     }
@@ -118,7 +119,7 @@ class TaskController extends AbstractController
     {
         $this->authenticate();
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id)[0];
+        $task = $taskModel->findById($id);
         $task->markDone();
         header('Location: /task');
         exit;

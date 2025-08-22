@@ -69,7 +69,12 @@ class User extends AbstractModel
     {
         return $this->select($this->getmetadata(), $this, $id);
     }
-
+    public function findById(int $id)
+    {
+        $data = $this->select($this->getmetadata(), $this, $id);
+        $data = $data[0];
+        return $data;
+    }
 
     public function findbyField($field, $value)
     {

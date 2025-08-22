@@ -45,7 +45,6 @@ abstract class AbstractModel
                 }
             }
         }
-
         return $result;
     }
 
