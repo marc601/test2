@@ -66,24 +66,33 @@ class UserController extends AbstractController
     public function update($id)
     {
         $this->authenticate();
-        $userModel = new User(Database::getInstance());
-        $user = $userModel->findById($id);
-        $user->name = $_POST['name'];
-        $user->email = $_POST['email'];
 
-        $password = $user->password;
-        if (!empty($_POST['password'])) {
-            $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+        // 1. Añadir Autorización: Un usuario solo puede editarse a sí mismo (o un admin)
+        if ($_SESSION['user_id'] != $id) {
+            // Idealmente, redirigir a una página de error 403 Forbidden
+            header('Location: /user');
+            exit;
         }
 
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("UPDATE users SET name = :name, email = :email, password = :password WHERE id = :id");
-        $stmt->execute([
-            'name' => $user->name,
-            'email' => $user->email,
-            'password' => $password,
-            'id' => $id
-        ]);
+        $userModel = new User(Database::getInstance());
+        $user = $userModel->findById($id); // Asumiendo que findById devuelve un objeto
+
+        if (!$user) {
+            header('Location: /user'); // O a una página 404
+            exit;
+        }
+
+        // 2. Mapear y Validar los datos
+        $user->name = trim($_POST['name']);
+        $user->email = trim($_POST['email']);
+
+        // 3. Hashear la contraseña si se ha proporcionado una nueva
+        if (!empty($_POST['password'])) {
+            $user->password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+        }
+
+        // 4. Usar el método del modelo para guardar (elimina SQL del controlador)
+        $user->saveRecord();
 
         header('Location: /user');
     }
