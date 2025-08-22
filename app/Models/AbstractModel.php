@@ -82,24 +82,50 @@ abstract class AbstractModel
      */
     public function save($metadata, $model)
     {
+        $conn = $this->db->getConnection();
         $columns = array_filter($metadata['columns'], function ($column) use ($metadata) {
             return $column !== $metadata['primaryKey'];
         });
-        $fields = implode(', ', $columns);
-        $placeholders = implode(', ', array_map(fn($c) => ":$c", $columns));
 
-        $stmt = $this->db->getConnection()->prepare(
-            "INSERT INTO {$metadata['tableName']} ({$fields}) VALUES ({$placeholders})"
-        );
         $arrayModel = $model->toArray();
-        foreach ($columns as $column) {
-            $stmt->bindParam(':' . $column, $arrayModel[$column]);
+        $params = [];
+
+        // If the model has a primary key, it's an update
+        if (isset($model->{$metadata['primaryKey']}) && !empty($model->{$metadata['primaryKey']})) {
+            $fields = implode(', ', array_map(fn ($c) => "$c = :$c", $columns));
+            $stmt = $conn->prepare(
+                "UPDATE {$metadata['tableName']} SET {$fields} WHERE {$metadata['primaryKey']} = :{$metadata['primaryKey']}"
+            );
+            $params[':' . $metadata['primaryKey']] = $arrayModel[$metadata['primaryKey']];
+        } else { // Otherwise, it's an insert
+            $fields = implode(', ', $columns);
+            $placeholders = implode(', ', array_map(fn ($c) => ":$c", $columns));
+            $stmt = $conn->prepare(
+                "INSERT INTO {$metadata['tableName']} ({$fields}) VALUES ({$placeholders})"
+            );
         }
 
-        if ($stmt->execute()) {
-            $model->{$metadata['primaryKey']} = $this->db->getConnection()->lastInsertId();
+        foreach ($columns as $column) {
+            $params[':' . $column] = $arrayModel[$column] ?? null;
+        }
+
+        if ($stmt->execute($params)) {
+            if (!isset($model->{$metadata['primaryKey']})) {
+                $model->{$metadata['primaryKey']} = $conn->lastInsertId();
+            }
             return true;
         }
         return false;
+    }
+
+    public function delete($metadata, $id)
+    {
+        
+        $stmt = $this->db->getConnection()->prepare(
+            "DELETE FROM {$metadata['tableName']} WHERE {$metadata['primaryKey']} = :id"
+        );
+        $stmt->bindParam(':id', $id);
+
+        return $stmt->execute();
     }
 }

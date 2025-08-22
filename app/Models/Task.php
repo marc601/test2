@@ -19,7 +19,7 @@ class Task extends AbstractModel
         parent::__construct($connection);
     }
 
-    protected function getmetadata()
+    public function getmetadata()
     {
         return [
             'tableName' => 'tasks',

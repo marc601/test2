@@ -13,7 +13,7 @@ class User extends AbstractModel
     public $id;
     public $name;
     public $email;
-    public $password;
+    public $password = 'secret';
     public $created_at;
     public $updated_at;
 
@@ -23,7 +23,7 @@ class User extends AbstractModel
         $this->conn = $connection;
     }
 
-    protected function getmetadata()
+    public function getmetadata()
     {
         return [
             'tableName' => 'users',
@@ -78,54 +78,12 @@ class User extends AbstractModel
 
     public function saveRecord()
     {
-        $this->password = password_hash($this->password, PASSWORD_BCRYPT);
+        // The password should be hashed in the controller before calling this method.
         return $this->save($this->getmetadata(), $this);
     }
 
-
-    /**
-     * Update the user in the database.
-     *
-     * @return bool
-     */
-    public function update()
+    public function deleteRecord($id)
     {
-        $stmt = $this->conn->prepare(
-            "UPDATE users SET name = :name, email = :email, password = :password WHERE id = :id"
-        );
-
-        $this->name = htmlspecialchars(strip_tags($this->name));
-        $this->email = htmlspecialchars(strip_tags($this->email));
-        $this->password = password_hash($this->password, PASSWORD_BCRYPT);
-        $this->id = htmlspecialchars(strip_tags($this->id));
-
-        $stmt->bindParam(':name', $this->name);
-        $stmt->bindParam(':email', $this->email);
-        $stmt->bindParam(':password', $this->password);
-        $stmt->bindParam(':id', $this->id);
-
-        if ($stmt->execute()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Delete the user from the database.
-     *
-     * @return bool
-     */
-    public function delete()
-    {
-        $stmt = $this->conn->prepare("DELETE FROM users WHERE id = :id");
-        $this->id = htmlspecialchars(strip_tags($this->id));
-        $stmt->bindParam(':id', $this->id);
-
-        if ($stmt->execute()) {
-            return true;
-        }
-
-        return false;
+        return $this->delete($this->getmetadata(), $id);
     }
 }

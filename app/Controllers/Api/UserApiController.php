@@ -88,7 +88,7 @@ class UserApiController extends AbstractApiController
 
         if ($user->saveRecord()) {
             http_response_code(201);
-            unset($user->password);
+            $user->password = 'Secret';
             echo json_encode($user->toArray());
         } else {
             http_response_code(500);
@@ -100,36 +100,41 @@ class UserApiController extends AbstractApiController
     {
         $user_id = $this->authenticate();
         header('Content-Type: application/json');
+
+        // --- MEJORA DE AUTORIZACIÓN ---
+        // Un usuario solo puede modificarse a sí mismo.
+        if ($user_id != $id) {
+            http_response_code(403); // Forbidden
+            echo json_encode(['message' => 'Forbidden: You can only update your own profile.']);
+            return;
+        }
+
         $data = json_decode(file_get_contents('php://input'), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid JSON.']);
+            return;
+        }
 
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id)[0];
-
+        $user = $userModel->find($id);
         if (!$user) {
             http_response_code(404);
             echo json_encode(['message' => 'User not found']);
             return;
         }
+        $user = $user[0];
 
-        $user->name = $data['name'] ?? $user->name;
-        $user->email = $data['email'] ?? $user->email;
-
-        $password = $user->password;
+        $user->name = isset($data['name']) ? trim($data['name']) : $user->name;
+        $user->email = isset($data['email']) ? trim($data['email']) : $user->email;
         if (!empty($data['password'])) {
-            $password = password_hash($data['password'], PASSWORD_BCRYPT);
+            $user->password = password_hash($data['password'], PASSWORD_BCRYPT);
         }
+        $user->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("UPDATE users SET name = :name, email = :email, password = :password WHERE id = :id");
-        if (
-            $stmt->execute([
-                'name' => $user->name,
-                'email' => $user->email,
-                'password' => $password,
-                'id' => $id
-            ])
-        ) {
-            echo json_encode($user);
+        if ($user->saveRecord()) {
+            unset($user->password);
+            echo json_encode($user->toArray());
         } else {
             http_response_code(500);
             echo json_encode(['message' => 'Failed to update user']);
@@ -140,6 +145,14 @@ class UserApiController extends AbstractApiController
     {
         $user_id = $this->authenticate();
         header('Content-Type: application/json');
+
+        // --- MEJORA DE AUTORIZACIÓN ---
+        if ($user_id != $id) {
+            http_response_code(403); // Forbidden
+            echo json_encode(['message' => 'Forbidden: You can only delete your own profile.']);
+            return;
+        }
+
         $userModel = new User(Database::getInstance());
         $user = $userModel->find($id);
 
@@ -149,9 +162,7 @@ class UserApiController extends AbstractApiController
             return;
         }
 
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("DELETE FROM users WHERE id = :id");
-        if ($stmt->execute(['id' => $id])) {
+        if ($userModel->deleteRecord($id)) {
             echo json_encode(['message' => 'User deleted']);
         } else {
             http_response_code(500);

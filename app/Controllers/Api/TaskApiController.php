@@ -96,24 +96,17 @@ class TaskApiController extends AbstractApiController
             echo json_encode(['message' => 'Task not found or unauthorized']);
             return;
         }
-        $task = $task[0];
+        $task = $task[0]; // find() returns an array
 
         $task->title = $data['title'] ?? $task->title;
         $task->description = $data['description'] ?? $task->description;
         $task->status = $data['status'] ?? $task->status;
+        $task->updated_at = (new DateTime())->format('Y-m-d H:i:s');
 
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("UPDATE tasks SET user_id = :user_id, title = :title, description = :description, status = :status WHERE id = :id");
-        if (
-            $stmt->execute([
-                'user_id' => $task->user_id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'status' => $task->status,
-                'id' => $id
-            ])
-        ) {
-            echo json_encode($task);
+        // The saveRecord method now handles updates automatically
+        if ($task->saveRecord()) {
+            // It's good practice to return the updated object
+            echo json_encode($task->toArray());
         } else {
             http_response_code(500);
             echo json_encode(['message' => 'Failed to update task']);
@@ -133,9 +126,7 @@ class TaskApiController extends AbstractApiController
             return;
         }
 
-        $db = Database::getInstance()->getConnection();
-        $stmt = $db->prepare("DELETE FROM tasks WHERE id = :id");
-        if ($stmt->execute(['id' => $id])) {
+        if ($taskModel->delete($taskModel->getmetadata(), $id)) {
             echo json_encode(['message' => 'Task deleted']);
         } else {
             http_response_code(500);
