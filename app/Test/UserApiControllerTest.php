@@ -3,14 +3,12 @@
 use PHPUnit\Framework\TestCase;
 use App\Controllers\Api\UserApiController;
 use App\Models\User;
-use App\Core\Database;
 
 class UserApiControllerTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
-        // Register our custom stream wrapper for php://input
         if (in_array('php', stream_get_wrappers())) {
             stream_wrapper_unregister('php');
         }
@@ -20,7 +18,6 @@ class UserApiControllerTest extends TestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        // Unregister our custom stream wrapper
         if (in_array('php', stream_get_wrappers())) {
             stream_wrapper_unregister('php');
         }
@@ -68,7 +65,11 @@ class UserApiControllerTest extends TestCase
 
         $data = json_decode($output, true);
         $this->assertCount(2, $data);
+        $this->assertEquals(1, $data[0]['id']);
         $this->assertEquals('Marco', $data[0]['name']);
+        $this->assertEquals('marco@example.com', $data[0]['email']);
+        $this->assertEquals(2, $data[1]['id']);
+        $this->assertEquals('Ana', $data[1]['name']);
         $this->assertEquals('ana@example.com', $data[1]['email']);
     }
 
@@ -76,7 +77,7 @@ class UserApiControllerTest extends TestCase
     {
         $mockUserModel = $this->createMock(User::class);
 
-        $mockUserModel->method('find')->willReturn(
+        $mockUserModel->method('findById')->willReturn(
             User::fromArray([
                 'id' => 1,
                 'name' => 'Marco',
@@ -109,7 +110,7 @@ class UserApiControllerTest extends TestCase
         $mockUserModel = $this->createMock(User::class);
 
         // Mock find to return null when user is not found
-        $mockUserModel->method('find')->willReturn(null);
+        $mockUserModel->method('findById')->willReturn(null);
 
         $controller = $this->getMockBuilder(UserApiController::class)
             ->onlyMethods(['authenticate'])
@@ -131,17 +132,13 @@ class UserApiControllerTest extends TestCase
     {
         $mockUser = $this->createMock(User::class);
         $mockUser->method('saveRecord')->willReturn(true);
-
-        // Mock the properties that will be set by the controller
-        // These are public properties, so PHPUnit's mock will allow setting them.
-        // We set them here to reflect what the controller would do.
-        $mockUser->name = 'New User';
-        $mockUser->email = 'new@example.com';
-        $mockUser->password = 'new_password'; // This will be changed to 'Secret' by the controller
-        $mockUser->created_at = (new DateTime())->format('Y-m-d H:i:s');
-        $mockUser->updated_at = (new DateTime())->format('Y-m-d H:i:s');
-        // Assuming ID is set after saveRecord, we can set it on the mock too if needed for assertions
-        $mockUser->id = 1; 
+        $mockUser->method('toArray')->willReturn([
+            'id' => 1,
+            'name' => 'New User',
+            'email' => 'new@example.com',
+            'created_at' => (new DateTime())->format('Y-m-d H:i:s'),
+            'updated_at' => (new DateTime())->format('Y-m-d H:i:s')
+        ]); 
 
         $controller = $this->getMockBuilder(UserApiController::class)
             ->onlyMethods(['authenticate'])
@@ -166,7 +163,7 @@ class UserApiControllerTest extends TestCase
 
         $this->assertEquals('New User', $data['name']);
         $this->assertEquals('new@example.com', $data['email']);
-        $this->assertEquals('Secret', $data['password']); // Password is set to 'Secret' in the controller
+        $this->assertArrayNotHasKey('password', $data); // Password should not be returned in the response
         $this->assertArrayHasKey('id', $data); // Assuming ID is set after saveRecord
         $this->assertEquals(1, $data['id']); // Assert the ID we set on the mock
     }
