@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controllers;
+
 use App\Core\Database;
 use App\Models\Session;
 use App\Models\User;
@@ -46,7 +47,7 @@ class HomeController
         $session->user_id = $user->id;
         $session->session_token = bin2hex(random_bytes(12)); // 24 characters
         $session->cookie_token = null;
-        $session->expires_at = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        $session->expires_at = date('Y-m-d H:i:s', strtotime('+8 hour'));
 
         if ($session->saveRecord()) {
             $_SESSION['user_id'] = $user->id;
