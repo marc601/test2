@@ -160,4 +160,19 @@ class TaskController extends AbstractController
         $task->markDone();
         $this->redirect('/task');
     }
+
+    public function show($id)
+    {
+        $this->authenticate();
+        $taskModel = new Task(Database::getInstance());
+
+        $task = $taskModel->find($id);
+
+        $data = [
+            'title' => 'Detalle de la Tarea',
+            'task' => $task[0],
+            'statuses' => Task::$statuses
+        ];
+        $this->render('tasks/show', $data);
+    }
 }

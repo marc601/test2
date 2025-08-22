@@ -13,6 +13,7 @@ abstract class AbstractController
     abstract public function create();
     abstract public function edit(int $id);
     abstract public function delete(int $id);
+    abstract public function show(int $id);
 
 
     protected function authenticate()

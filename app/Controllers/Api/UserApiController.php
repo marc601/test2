@@ -33,10 +33,10 @@ class UserApiController extends AbstractApiController
     {
         $user_id = $this->authenticate();
         $userModel = $user ?? new User(Database::getInstance());
-        $user = $userModel->find($id);
+        $user = $userModel->findById($id);
 
         if ($user) {
-            $userData = $user[0]->toArray();
+            $userData = $user->toArray();
             unset($userData['password']);
             JsonResponse::ok($userData);
         } else {
@@ -88,11 +88,10 @@ class UserApiController extends AbstractApiController
         }
 
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id);
+        $user = $userModel->findById($id);
         if (!$user) {
             return JsonResponse::notFound('User not found');
         }
-        $user = $user[0];
 
         $user->name = isset($data['name']) ? trim($data['name']) : $user->name;
         $user->email = isset($data['email']) ? trim($data['email']) : $user->email;
@@ -125,7 +124,7 @@ class UserApiController extends AbstractApiController
         }
 
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id);
+        $user = $userModel->findById($id);
 
         if (!$user) {
             return JsonResponse::notFound('User not found');

@@ -26,13 +26,13 @@ class TaskApiController extends AbstractApiController
     public function show($id)
     {
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id);
+        $task = $taskModel->findById($id);
         $user_id = $this->authenticate();
 
-        if (empty($task) || $task[0]->user_id !== $user_id) { // Check ownership
+        if (!$task || $task->user_id !== $user_id) { // Check ownership
             return JsonResponse::notFound('Task not found or unauthorized');
         }
-        JsonResponse::ok($task[0]->toArray());
+        JsonResponse::ok($task->toArray());
     }
 
     public function store()
@@ -73,12 +73,11 @@ class TaskApiController extends AbstractApiController
         $data = json_decode(file_get_contents('php://input'), true);
 
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id);
+        $task = $taskModel->findById($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) {
+        if (!$task || $task->user_id !== $user_id) {
             return JsonResponse::notFound('Task not found or unauthorized');
         }
-        $task = $task[0];
 
         $task->title = $data['title'] ?? $task->title;
         $task->description = $data['description'] ?? $task->description;
@@ -101,9 +100,9 @@ class TaskApiController extends AbstractApiController
     {
         $user_id = $this->authenticate();
         $taskModel = new Task(Database::getInstance());
-        $task = $taskModel->find($id);
+        $task = $taskModel->findById($id);
 
-        if (empty($task) || $task[0]->user_id !== $user_id) {
+        if (!$task || $task->user_id !== $user_id) {
             return JsonResponse::notFound('Task not found or unauthorized');
         }
 

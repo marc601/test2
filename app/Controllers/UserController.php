@@ -24,10 +24,10 @@ class UserController extends AbstractController
     {
         $this->authenticate();
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id);
+        $user = $userModel->findById($id);
         $data = [
             'title' => 'Detalles',
-            'user' => $user[0] // find returns an array
+            'user' => $user
         ];
         $this->render('users/show', $data);
     }
@@ -73,10 +73,10 @@ class UserController extends AbstractController
     {
         $this->authenticate();
         $userModel = new User(Database::getInstance());
-        $user = $userModel->find($id);
+        $user = $userModel->findById($id);
         $data = [
             'title' => 'Edit User',
-            'user' => $user[0] // find returns an array
+            'user' => $user
         ];
         $this->render('users/edit', $data);
     }

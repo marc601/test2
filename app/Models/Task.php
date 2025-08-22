@@ -100,9 +100,8 @@ class Task extends AbstractModel
 
     public function findById(int $id)
     {
-        $data = $this->select($this->getmetadata(), $this, $id);
-        $data = $data[0];
-        return $data;
+        // This now returns a single Task object or null, which is much safer.
+        return $this->selectById($this->getmetadata(), $this, $id);
     }
 
     public function findbyField($field, $value)
