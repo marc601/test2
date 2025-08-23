@@ -1,25 +1,3 @@
- # Archivos de dependencias de Composer
- vendor/
- 
- # Archivos de entorno. ¡Nunca subas credenciales a un repositorio!
- .env
- .env.local
- .env.*.local
- 
- # Archivos de registro (logs)
- *.log
- logs/
- 
- # Archivos y directorios de IDEs y editores de código
- .idea/
- .vscode/
- *.swp
- *~
- 
- # Archivos generados por el sistema operativo
- .DS_Store
- Thumbs.db
- 
  # Cache de herramientas de desarrollo
  .phpunit.result.cache
  .php-cs-fixer.cache
@@ -29,3 +7,4 @@
  .vscode/
  schema.sql
  vendor/
+ .vscode
