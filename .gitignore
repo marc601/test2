@@ -1,5 +1,5 @@
  # Archivos de dependencias de Composer
- /vendor/
+ vendor/
  
  # Archivos de entorno. ¡Nunca subas credenciales a un repositorio!
  .env
@@ -23,3 +23,9 @@
  # Cache de herramientas de desarrollo
  .phpunit.result.cache
  .php-cs-fixer.cache
+ .php-cs-fixer.dist.php
+ .php-cs-fixer.dist.php
+ .php-cs-fixer.php
+ .vscode/
+ schema.sql
+ vendor/
