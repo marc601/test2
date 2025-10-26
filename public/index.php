@@ -22,14 +22,18 @@ if ($segments[0] === 'api') {
 
     if (class_exists($controllerClass)) {
         $controller = new $controllerClass();
-
         if ($method === 'GET' && $id) {
-            $controller->show($id);
+            if ($id == 'login') {
+                $controller->login();
+            } else {
+                $controller->show($id);
+            }
         } elseif ($method === 'GET') {
             $controller->index();
         } elseif ($method === 'POST') {
             $controller->store();
         } elseif ($method === 'PUT' || $method === 'PATCH') {
+
             $controller->update($id);
         } elseif ($method === 'DELETE') {
             $controller->delete($id);
@@ -47,7 +51,6 @@ if ($segments[0] === 'api') {
         $controllerName = 'HomeController';
         $methodName = 'logout';
         $params = [];
-
     } else {
         $controllerName = !empty($segments[0]) ? ucfirst($segments[0]) . 'Controller' : 'HomeController';
         $methodName = $segments[1] ?? 'index';

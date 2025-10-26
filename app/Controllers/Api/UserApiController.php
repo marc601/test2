@@ -146,7 +146,7 @@ class UserApiController extends AbstractApiController
         }
 
         $userModel = new User(Database::getInstance());
-        $user = $userModel->findOneBy('email', $data['email']);
+        $user = $userModel->findbyField('email', $data['email'])[0];
 
         if ($user && password_verify($data['password'], $user->password)) {
             $jwtHandler = new \App\Core\JwtHandler();
