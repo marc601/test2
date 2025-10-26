@@ -136,4 +136,24 @@ class UserApiController extends AbstractApiController
             JsonResponse::serverError('Failed to delete user');
         }
     }
+
+    public function login()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !$data) {
+            return JsonResponse::send(400, ['message' => 'Invalid JSON or empty request body']);
+        }
+
+        $userModel = new User(Database::getInstance());
+        $user = $userModel->findOneBy('email', $data['email']);
+
+        if ($user && password_verify($data['password'], $user->password)) {
+            $jwtHandler = new \App\Core\JwtHandler();
+            $token = $jwtHandler->encode(['id' => $user->id, 'email' => $user->email]);
+            JsonResponse::ok(['token' => $token]);
+        } else {
+            JsonResponse::send(401, ['message' => 'Invalid credentials']);
+        }
+    }
 }

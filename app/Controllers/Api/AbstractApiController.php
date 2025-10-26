@@ -7,30 +7,31 @@ abstract class AbstractApiController
 {
     protected function authenticate()
     {
-        // Para sesiones en version web (no implementado)
-        $token = $_SESSION['token'] ?? null;
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
 
-        // Para autorización con APIS
-        if (!$token && isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            if (preg_match('/Bearer\s(\S+)/', $_SERVER['HTTP_AUTHORIZATION'], $matches)) {
-                $token = $matches[1];
-            }
-        }
-
-        if (!$token) {
+        if (!$authHeader) {
             http_response_code(401);
             echo json_encode(['message' => 'Unauthorized: Token missing']);
             exit;
         }
-        $sessionModel = new Session(Database::getInstance());
-        $session = $sessionModel->findbyField('session_token', $token);
 
-        if (empty($session) || strtotime($session[0]->expires_at) < time()) {
+        if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+            $jwt = $matches[1];
+        } else {
+            http_response_code(400);
+            echo json_encode(['message' => 'Malformed token']);
+            exit;
+        }
+
+        $jwtHandler = new \App\Core\JwtHandler();
+        $data = $jwtHandler->decode($jwt);
+
+        if (!$data) {
             http_response_code(401);
             echo json_encode(['message' => 'Unauthorized: Invalid or expired token']);
             exit;
         }
 
-        return $session[0]->user_id;
+        return $data['id'];
     }
 }

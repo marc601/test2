@@ -9,5 +9,8 @@
         "guzzlehttp/guzzle": "^7.9"
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "require": {
+        "firebase/php-jwt": "^6.11"
+    }
 }
